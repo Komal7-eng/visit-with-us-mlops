@@ -1,0 +1,86 @@
+name: visit-with-us-mlops
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+
+  register-dataset:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: pip install pandas huggingface_hub python-dotenv
+
+    - name: Register Data
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: python upload_data.py
+
+
+  data-prep:
+    runs-on: ubuntu-latest
+    needs: register-dataset
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: pip install pandas scikit-learn huggingface_hub python-dotenv
+
+    - name: Prepare Data
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: python prepare_data.py
+
+
+  model-training:
+    runs-on: ubuntu-latest
+    needs: data-prep
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: pip install -r requirements-training.txt
+
+    - name: Train Model
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: python train_model.py
+
+
+  deploy-hosting:
+    runs-on: ubuntu-latest
+    needs: model-training
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: pip install huggingface_hub python-dotenv
+
+    - name: Deploy to Space
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: python deploy.py
