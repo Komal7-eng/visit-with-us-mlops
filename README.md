@@ -1,5 +1,5 @@
 ---
-title: Mvisit with Us MLOps
+title: Mlops Visit With Us
 emoji: 🌲
 colorFrom: green
 colorTo: blue

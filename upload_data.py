@@ -2,10 +2,10 @@ import os
 from huggingface_hub import HfApi, login
 from dotenv import load_dotenv
 
+token = os.environ.get("HF_TOKEN")
 
-# LOAD The token from the .env file
-load_dotenv()       
-token = os.getenv("HF_TOKEN")
+api = HfApi(token=token)
+
 
 if not token:
     print("Error: .env file mein HF_TOKEN nahi mila!")
