@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/visit_with_us_MLOps/mlruns/0/84eda34eab5a4f70895ce2e7e6ab2983/artifacts
+end_time: 1775246779906
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 84eda34eab5a4f70895ce2e7e6ab2983
+run_name: bold-owl-511
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1775246775594
+status: 3
+tags: []
+user_id: kaushalyadatt

@@ -34,8 +34,11 @@ model_repo_id = "kaushalya7/mlops-visit-with-us-model"
 # =========================
 # 📊 MLflow Setup
 # =========================
+# 📊 MLflow setup
 mlflow.set_experiment("Visit_With_Us_Experiment")
+mlflow.set_tracking_uri("file:./mlruns")  # 
 
+mlflow.end_run()  # 
 # =========================
 # 📥 Load Data
 # =========================
