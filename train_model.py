@@ -17,9 +17,9 @@ from huggingface_hub import hf_hub_download, HfApi, login
 from dotenv import load_dotenv
 
 # =========================
-# 🔐 Load Token
+# 🔐 Load Token (WORKS LOCAL + GITHUB)
 # =========================
-load_dotenv("C:\\visit_with_us_MLOps\\.env", override=True)
+load_dotenv()
 token = os.getenv("HF_TOKEN")
 if token:
     login(token=token)
@@ -36,9 +36,7 @@ model_repo_id = "kaushalya7/mlops-visit-with-us-model"
 # 📊 MLflow Setup
 # =========================
 mlflow.set_experiment("Visit_With_Us_Experiment")
-
-# 🔥 Prevent MLflow crash (IMPORTANT)
-mlflow.end_run()
+mlflow.end_run()  # prevent active run error
 
 # =========================
 # 📥 Load Data
@@ -66,12 +64,10 @@ test_df = test_df[selected_features + [target]]
 # =========================
 cat_cols = train_df.select_dtypes(include=['object']).columns
 
-encoders = {}
 for col in cat_cols:
     le = LabelEncoder()
     train_df[col] = le.fit_transform(train_df[col].astype(str))
     test_df[col] = le.transform(test_df[col].astype(str))
-    encoders[col] = le
 
 # =========================
 # 📊 Split
@@ -87,7 +83,7 @@ y_test = test_df[target]
 # =========================
 models = {
     "RandomForest": RandomForestClassifier(random_state=42, class_weight='balanced'),
-    "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+    "XGBoost": XGBClassifier(eval_metric='logloss')  # cleaned warning
 }
 
 param_grids = {
@@ -113,13 +109,12 @@ for model_name in models:
         models[model_name],
         param_grids[model_name],
         cv=3,
-        n_jobs=-1   # 🔥 faster
+        n_jobs=-1
     )
     grid.fit(X_train, y_train)
 
     for params in grid.cv_results_["params"]:
-        
-        mlflow.end_run()  # 🔥 ensure clean run
+        mlflow.end_run()
 
         with mlflow.start_run():
 
@@ -129,11 +124,11 @@ for model_name in models:
             preds = model.predict(X_test)
 
             acc = accuracy_score(y_test, preds)
-            precision = precision_score(y_test, preds)
-            recall = recall_score(y_test, preds)
-            f1 = f1_score(y_test, preds)
+            precision = precision_score(y_test, preds, zero_division=0)
+            recall = recall_score(y_test, preds, zero_division=0)
+            f1 = f1_score(y_test, preds, zero_division=0)
 
-            # 🔥 Logging
+            # Logging
             mlflow.log_param("model", model_name)
             mlflow.log_params(params)
 
@@ -142,7 +137,6 @@ for model_name in models:
             mlflow.log_metric("recall", recall)
             mlflow.log_metric("f1_score", f1)
 
-            # Save best model
             if acc > best_score:
                 best_score = acc
                 best_model = model
@@ -167,13 +161,17 @@ if hasattr(best_model, "feature_importances_"):
     plt.savefig("feature_importance.png")
 
 # =========================
-# 🔥 Log Artifacts Safely
+# 🔥 Final MLflow Logging
 # =========================
 mlflow.end_run()
+
 with mlflow.start_run(run_name="final_artifacts"):
     mlflow.log_artifact("confusion_matrix.png")
+
     if os.path.exists("feature_importance.png"):
         mlflow.log_artifact("feature_importance.png")
+
+    mlflow.sklearn.log_model(best_model, "model")
 
 # =========================
 # 💾 Save Metrics
@@ -190,11 +188,6 @@ with open("metrics.json", "w") as f:
 # 💾 Save Model
 # =========================
 joblib.dump(best_model, "model.joblib")
-
-# =========================
-# 🔥 Log Model
-# =========================
-mlflow.sklearn.log_model(best_model, "model")
 
 # =========================
 # ☁️ Upload to Hugging Face
