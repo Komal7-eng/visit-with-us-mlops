@@ -64,7 +64,7 @@ test_df.to_csv("data/test.csv", index=False)
 # 4. Upload the resulting train and test datasets back to the Hugging Face data space
 print("\n--- Step 4: Uploading to HF ---")
 
-folder_path = "C:\\visit_with_us_MLOps\\data"
+folder_path = "data"
 
 for file_name in ["train.csv", "test.csv"]:
     file_path = os.path.join(folder_path, file_name)
