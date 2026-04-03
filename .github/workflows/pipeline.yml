@@ -25,131 +25,13 @@ jobs:
     - name: Register Data
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      
-
-
-  # 🔹 Stage 2: Data Preparation
-  data-prep:
-    runs-on: ubuntu-latest
-    needs: register-dataset
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: pip install pandas scikit-learn huggingface_hub python-dotenv
-
-    - name: Prepare Data
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python src/prepare_data.py
-
-
-  # 🔹 Stage 3: Model Training
-  model-training:
-    runs-on: ubuntu-latest
-    needs: data-prep
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: pip install -r requirements.txt
-
-    - name: Train Model
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python src/train_model.py
-      %%writefile .github/workflows/pipeline.yml
-name: visit-with-us-mlops
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-
-  # 🔹 Stage 1: Data Registration
-  register-dataset:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: pip install huggingface_hub python-dotenv
-
-    - name: Register Data
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      
-
-
-  # 🔹 Stage 2: Data Preparation
-  data-prep:
-    runs-on: ubuntu-latest
-    needs: register-dataset
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: pip install pandas scikit-learn huggingface_hub python-dotenv
-
-    - name: Prepare Data
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python src/prepare_data.py
-
-
-  # 🔹 Stage 3: Model Training
-  model-training:
-    runs-on: ubuntu-latest
-    needs: data-prep
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: pip install -r requirements.txt
       run: python upload_data.py
-      
-    - name: Train Model
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python src/train_model.py
 
 
-  # 🔹 Stage 4: Deployment
-  deploy-hosting:
+  # 🔹 Stage 2: Data Preparation
+  data-prep:
     runs-on: ubuntu-latest
-    needs: model-training
+    needs: register-dataset
 
     steps:
     - uses: actions/checkout@v3
@@ -160,12 +42,35 @@ jobs:
         python-version: '3.10'
 
     - name: Install Dependencies
-      run: pip install huggingface_hub python-dotenv
+      run: pip install pandas scikit-learn huggingface_hub python-dotenv
 
-    - name: Deploy to Hugging Face Space
+    - name: Prepare Data
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python deploy.py
+      run: python prepare_data.py
+
+
+  # 🔹 Stage 3: Model Training
+  model-training:
+    runs-on: ubuntu-latest
+    needs: data-prep
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: pip install -r requirements.txt
+
+    - name: Train Model
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: python train_model.py
+
 
   # 🔹 Stage 4: Deployment
   deploy-hosting:
