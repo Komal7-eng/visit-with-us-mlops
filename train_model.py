@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 # =========================
 # 🔐 Load Token
 # =========================
-load_dotenv("E:\\GL\\clean-repo\\.env", override=True)
+load_dotenv("C:\\visit_with_us_MLOps\\.env", override=True)
 token = os.getenv("HF_TOKEN")
 if token:
     login(token=token)
