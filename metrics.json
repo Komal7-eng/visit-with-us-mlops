@@ -1,1 +1,1 @@
-{"best_params": {"max_depth": 10, "n_estimators": 100}, "accuracy": 0.847457627118644}
+{"best_params": {"max_depth": 6, "n_estimators": 100}, "accuracy": 0.8753026634382567}
