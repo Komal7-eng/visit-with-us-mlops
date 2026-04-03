@@ -4,23 +4,22 @@ import joblib
 import json
 import mlflow
 import mlflow.sklearn
-import matplotlib.pyplot as plt
-import numpy as np
 
 from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.preprocessing import LabelEncoder
 
 from huggingface_hub import hf_hub_download, HfApi, login
 from dotenv import load_dotenv
 
 # =========================
-# 🔐 Load Token (WORKS LOCAL + GITHUB)
+# 🔐 Load Hugging Face Token
 # =========================
-load_dotenv()
+load_dotenv()   # no path
+
 token = os.getenv("HF_TOKEN")
+
 if token:
     login(token=token)
 
@@ -36,7 +35,6 @@ model_repo_id = "kaushalya7/mlops-visit-with-us-model"
 # 📊 MLflow Setup
 # =========================
 mlflow.set_experiment("Visit_With_Us_Experiment")
-mlflow.end_run()  # prevent active run error
 
 # =========================
 # 📥 Load Data
@@ -48,7 +46,7 @@ train_df = pd.read_csv(train_path)
 test_df = pd.read_csv(test_path)
 
 # =========================
-# 🎯 Feature Selection
+# 🎯 Feature Selection (Aligned with Streamlit)
 # =========================
 selected_features = [
     'Age', 'MonthlyIncome', 'Passport',
@@ -79,110 +77,56 @@ X_test = test_df.drop(target, axis=1)
 y_test = test_df[target]
 
 # =========================
-# 🤖 Models
+# 🤖 Model + GridSearch
 # =========================
-models = {
-    "RandomForest": RandomForestClassifier(random_state=42, class_weight='balanced'),
-    "XGBoost": XGBClassifier(eval_metric='logloss')  # cleaned warning
+rf = RandomForestClassifier(random_state=42, class_weight='balanced')
+
+param_grid = {
+    'n_estimators': [50, 100],
+    'max_depth': [5, 10]
 }
 
-param_grids = {
-    "RandomForest": {
-        'n_estimators': [50, 100],
-        'max_depth': [5, 10]
-    },
-    "XGBoost": {
-        'n_estimators': [50, 100],
-        'max_depth': [3, 6]
-    }
-}
-
-best_model = None
-best_score = 0
-best_params = {}
+grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=3)
 
 # =========================
-# 🔥 Training Loop
+# 🔥 Training + MLflow
 # =========================
-for model_name in models:
-    grid = GridSearchCV(
-        models[model_name],
-        param_grids[model_name],
-        cv=3,
-        n_jobs=-1
-    )
-    grid.fit(X_train, y_train)
+mlflow.end_run()  # End any existing run to avoid nested runs
+with mlflow.start_run():
 
-    for params in grid.cv_results_["params"]:
-        mlflow.end_run()
+    grid_search.fit(X_train, y_train)
 
-        with mlflow.start_run():
+    best_model = grid_search.best_estimator_
+    preds = best_model.predict(X_test)
 
-            model = models[model_name].set_params(**params)
-            model.fit(X_train, y_train)
+    acc = accuracy_score(y_test, preds)
+    precision = precision_score(y_test, preds)
+    recall = recall_score(y_test, preds)
+    f1 = f1_score(y_test, preds)
 
-            preds = model.predict(X_test)
+    # 🔥 Log params + metrics
+    mlflow.log_params(grid_search.best_params_)
+    mlflow.log_metric("accuracy", acc)
+    mlflow.log_metric("precision", precision)
+    mlflow.log_metric("recall", recall)
+    mlflow.log_metric("f1_score", f1)
 
-            acc = accuracy_score(y_test, preds)
-            precision = precision_score(y_test, preds, zero_division=0)
-            recall = recall_score(y_test, preds, zero_division=0)
-            f1 = f1_score(y_test, preds, zero_division=0)
-
-            # Logging
-            mlflow.log_param("model", model_name)
-            mlflow.log_params(params)
-
-            mlflow.log_metric("accuracy", acc)
-            mlflow.log_metric("precision", precision)
-            mlflow.log_metric("recall", recall)
-            mlflow.log_metric("f1_score", f1)
-
-            if acc > best_score:
-                best_score = acc
-                best_model = model
-                best_params = params
-
-# =========================
-# 📊 Confusion Matrix
-# =========================
-disp = ConfusionMatrixDisplay.from_estimator(best_model, X_test, y_test)
-plt.savefig("confusion_matrix.png")
-
-# =========================
-# 📊 Feature Importance
-# =========================
-if hasattr(best_model, "feature_importances_"):
-    importance = best_model.feature_importances_
-    features = X_train.columns
-
-    plt.figure(figsize=(8, 5))
-    plt.barh(features, importance)
-    plt.title("Feature Importance")
-    plt.savefig("feature_importance.png")
-
-# =========================
-# 🔥 Final MLflow Logging
-# =========================
-mlflow.end_run()
-
-with mlflow.start_run(run_name="final_artifacts"):
-    mlflow.log_artifact("confusion_matrix.png")
-
-    if os.path.exists("feature_importance.png"):
-        mlflow.log_artifact("feature_importance.png")
-
+    # 🔥 Log model (IMPORTANT for marks)
     mlflow.sklearn.log_model(best_model, "model")
 
-# =========================
-# 💾 Save Metrics
-# =========================
-metrics = {
-    "best_params": best_params,
-    "accuracy": best_score
-}
+    # =========================
+    # 💾 Save Metrics
+    # =========================
+    metrics = {
+        "best_params": grid_search.best_params_,
+        "accuracy": acc,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1
+    }
 
-with open("metrics.json", "w") as f:
-    json.dump(metrics, f)
+    with open("metrics.json", "w") as f:
+        json.dump(metrics, f)
 
 # =========================
 # 💾 Save Model
@@ -206,4 +150,4 @@ api.upload_file(
     repo_type="model"
 )
 
-print("🚀 Training + Tracking + Deployment Complete!")
+print("🚀 Training + MLflow Tracking Complete!")
