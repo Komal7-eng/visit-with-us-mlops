@@ -21,7 +21,7 @@ api.create_repo(
     exist_ok=True
 )
 
-files_to_upload = ["app.py", "Dockerfile", "requirements-training.txt", "README.md"]
+files_to_upload = ["app.py", "Dockerfile", "requirements.txt", "README.md"]
 
 for file in files_to_upload:
     if os.path.exists(file):

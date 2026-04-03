@@ -7,35 +7,39 @@ on:
 
 jobs:
 
+  # 🔹 Stage 1: Data Registration
   register-dataset:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.10'
 
     - name: Install Dependencies
-      run: pip install pandas huggingface_hub python-dotenv
+      run: pip install huggingface_hub python-dotenv
 
     - name: Register Data
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python upload_data.py
+      run: python src/upload_data.py
 
 
+  # 🔹 Stage 2: Data Preparation
   data-prep:
     runs-on: ubuntu-latest
     needs: register-dataset
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.10'
 
     - name: Install Dependencies
       run: pip install pandas scikit-learn huggingface_hub python-dotenv
@@ -43,44 +47,48 @@ jobs:
     - name: Prepare Data
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python prepare_data.py
+      run: python src/prepare_data.py
 
 
+  # 🔹 Stage 3: Model Training
   model-training:
     runs-on: ubuntu-latest
     needs: data-prep
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.10'
 
     - name: Install Dependencies
-      run: pip install -r requirements-training.txt
+      run: pip install -r requirements.txt
 
     - name: Train Model
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: python train_model.py
+      run: python src/train_model.py
 
 
+  # 🔹 Stage 4: Deployment
   deploy-hosting:
     runs-on: ubuntu-latest
     needs: model-training
+
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.10'
 
     - name: Install Dependencies
       run: pip install huggingface_hub python-dotenv
 
-    - name: Deploy to Space
+    - name: Deploy to Hugging Face Space
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: python deploy.py
