@@ -53,10 +53,14 @@ print("\n--- Step 3: Splitting Data ---")
 train_df, test_df = train_test_split(df_cleaned, test_size=0.2, random_state=42, stratify=df_cleaned['ProdTaken'])
 print(f"Train size: {len(train_df)}, Test size: {len(test_df)}")
 
-trtrain_df.to_csv("data/train.csv", index=False)
+# Ensure folder exists
+os.makedirs("data", exist_ok=True)
+
+# Save files
+train_df.to_csv("data/train.csv", index=False)
 test_df.to_csv("data/test.csv", index=False)
 
-folder_path = "data"
+
 # 4. Upload the resulting train and test datasets back to the Hugging Face data space
 print("\n--- Step 4: Uploading to HF ---")
 
