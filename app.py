@@ -10,7 +10,7 @@ st.set_page_config(page_title="Visit With Us Predictor", layout="centered")
 @st.cache_resource
 def load_model_from_hf():
     try:
-        repo_id = "repo_id = "kaushalya7/mlops-visit-with-us-model"" 
+        repo_id = "kaushalya7/mlops-visit-with-us-model"
         # Check if file exists in the hub and download
         model_path = hf_hub_download(repo_id=repo_id, filename="model.joblib", repo_type="model")
         return joblib.load(model_path)
