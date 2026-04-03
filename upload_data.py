@@ -16,7 +16,7 @@ else:
 
     
     repo_id = "kaushalya7/visit-with-us-mlops" 
-    local_file = "C:\\visit_with_us_MLOps\\data\\tourism.csv" 
+    local_file = "data/tourism.csv"
 
     
     # UPloading the file to Hugging Face Hub
